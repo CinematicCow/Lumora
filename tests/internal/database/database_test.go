@@ -16,6 +16,18 @@ func setupTestFile(t *testing.T) *os.File {
 	return tempFile
 }
 
+func openTestFile(t *testing.T) *os.File {
+	tempFile := setupTestFile(t)
+	defer tempFile.Close()
+
+	// open the mock file
+	db, err := os.Open(tempFile.Name())
+	if err != nil {
+		t.Fatalf("Failed to open temporary file: %v", err)
+	}
+	return db
+}
+
 type ListLumoraCase struct {
 	name string
 	test func(t *testing.T)
@@ -25,7 +37,8 @@ var ListLumoraCases = []ListLumoraCase{
 	{
 		name: "ListLumora",
 		test: func(t *testing.T) {
-			_, err := database.ListLumora()
+			db := openTestFile(t)
+			_, err := database.ListLumora(db)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}
@@ -35,18 +48,9 @@ var ListLumoraCases = []ListLumoraCase{
 		name: "empty database",
 		test: func(t *testing.T) {
 
-			tempFile := setupTestFile(t)
-			defer tempFile.Close()
-
-			// open the mock file
-			db, err := os.Open(tempFile.Name())
-			if err != nil {
-				t.Fatalf("Failed to open temporary file: %v", err)
-			}
-			defer db.Close()
-
+			db := openTestFile(t)
 			// call the ListLumora function
-			lumora, err := database.ListLumora()
+			lumora, err := database.ListLumora(db)
 
 			// assert no error
 			if err != nil {
