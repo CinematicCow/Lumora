@@ -4,5 +4,5 @@ init:
 clear:
 	./scripts/clear.sh -y
 
-main:
+run:
 	go run cmd/lumora/main.go
