@@ -8,21 +8,13 @@ import (
 	"github.com/CinematicCow/Lumora/internal/models"
 )
 
-func init() {
-	gob.Register(models.Lumora{})
-}
-
-func ListLumora() ([]models.Lumora, error) {
-	expandedPath := os.ExpandEnv(models.LUMORA_PATH)
-	db, err := os.Open(expandedPath)
-	if err != nil {
-		return nil, err
-	}
+func ListLumora(file *os.File) ([]models.Lumora, error) {
+	db := file
 	defer db.Close()
 
 	var lumora []models.Lumora
 	decoder := gob.NewDecoder(db)
-	err = decoder.Decode(&lumora)
+	err := decoder.Decode(&lumora)
 	if err == io.EOF {
 		return nil, nil
 	} else if err != nil {
