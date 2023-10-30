@@ -2,7 +2,7 @@ package database
 
 import (
 	"encoding/gob"
-	"fmt"
+	"io"
 	"os"
 
 	"github.com/CinematicCow/Lumora/internal/models"
@@ -12,25 +12,24 @@ func init() {
 	gob.Register(models.Lumora{})
 }
 
-func ListLumora() []models.Lumora {
+func ListLumora() ([]models.Lumora, error) {
 	expandedPath := os.ExpandEnv(models.LUMORA_PATH)
-	fmt.Println(expandedPath)
 	db, err := os.Open(expandedPath)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer db.Close()
 
-	decoder := gob.NewDecoder(db)
-
 	var lumora []models.Lumora
-
+	decoder := gob.NewDecoder(db)
 	err = decoder.Decode(&lumora)
-	if err != nil {
-		panic(err)
+	if err == io.EOF {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
 	}
 
-	return lumora
+	return lumora, nil
 }
 
 func AddLumora(lumora models.Lumora) {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/CinematicCow/Lumora/internal/database"
 )
@@ -9,5 +10,12 @@ import (
 func main() {
 	fmt.Println("Hello, Lumora!")
 
-	database.ListLumora()
+	data, err := database.ListLumora()
+
+	if err != nil {
+		log.Panicf("something went wrong: %v", err)
+	}
+
+	fmt.Print(data)
+
 }
