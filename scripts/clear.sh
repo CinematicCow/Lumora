@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Get the directory to delete
-directory="$HOME/.config/lumora"
+directory="$HOME/.lumora"
 
 # Check if the user wants to bypass the prompt
 if [[ "$1" == "-y" ]]; then
