@@ -2,53 +2,57 @@ package database
 
 import (
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/CinematicCow/Lumora/internal/database"
 	"github.com/CinematicCow/Lumora/internal/models"
 )
 
+var tempFilePool = sync.Pool{
+	New: func() interface{} {
+		tempFile, _ := os.CreateTemp("../../../tmp/", "test-lumora.gob")
+		return tempFile
+	},
+}
+
+var dataPool = sync.Pool{
+	New: func() interface{} {
+		return new(models.Data)
+	},
+}
+
 func setupTestFile(t *testing.T) *os.File {
-	// create a temp file to mock
-	tempFile, err := os.CreateTemp("../../../tmp/", "test-lumora.gob")
-	if err != nil {
-		t.Fatalf("Failed to create temporary file: %v", err)
-	}
-	return tempFile
+	return tempFilePool.Get().(*os.File)
 }
 
 func openTestFile(t *testing.T) *os.File {
 	tempFile := setupTestFile(t)
-
-	// open the mock file
-	db, err := os.Open(tempFile.Name())
-	if err != nil {
-		t.Fatalf("Failed to open temporary file: %v", err)
-	}
+	db := new(os.File)
+	*db = *tempFile
 	return db
 }
 
 type TestCase struct {
 	name string
-	test func(t *testing.T)
+	test func(*testing.T)
 }
 
 var AddToDBCases = []TestCase{
 	{
 		name: "AddToDB",
 		test: func(t *testing.T) {
-
-			db := setupTestFile(t)
+			db := openTestFile(t)
 			defer db.Close()
 
-			data := models.Lumora{
-				Key:   "test",
-				Value: "test",
-			}
-			err := database.AddToDB(db, data)
+			data := dataPool.Get().(*models.Data)
+			data.Key = []byte("key")
+			data.Value = []byte("value")
+			err := database.AddToDB(db, &data.Key, &data.Value)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}
+			dataPool.Put(data)
 		},
 	},
 }
@@ -67,17 +71,11 @@ var ListLumoraCases = []TestCase{
 	{
 		name: "empty database",
 		test: func(t *testing.T) {
-
 			db := openTestFile(t)
-			// call the ListLumora function
 			lumora, err := database.GetAllFromDB(db)
-
-			// assert no error
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}
-
-			// assert lumora returned EOF
 			if lumora != nil {
 				t.Fatalf("Expected nil, got %v", lumora)
 			}
