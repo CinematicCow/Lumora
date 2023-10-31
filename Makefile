@@ -11,6 +11,8 @@ BINARY_NAME := lumora
 TEST_DIR := ./tests
 MODULE_NAME ?= all
 
+.PHONY: tmp
+
 # Main target
 all: clean build test
 
@@ -46,3 +48,6 @@ init:
 
 clear:
 	./scripts/clear.sh -y
+
+temp:
+	rm -r ./tmp/*
