@@ -1,11 +1,13 @@
 # Go variables
 GOCMD := go
 GOBUILD := $(GOCMD) build
+GORUN := $(GOCMD) run
 GOTEST := $(GOCMD) test
 GOCLEAN := $(GOCMD) clean
 GOGET := $(GOCMD) get
 GOMOD := $(GOCMD) mod
 BINARY_NAME := lumora
+MAIN_DIR = ./cmd/lumora
 
 # Test variables
 TEST_DIR := ./tests
@@ -18,7 +20,12 @@ all: clean build test
 
 # Build your Go application
 build:
-	$(GOBUILD) -o $(BINARY_NAME)
+	$(GOBUILD) -o $(BINARY_NAME) $(MAIN_DIR)
+
+# Run you Go application 
+run:
+	$(GORUN) $(MAIN_DIR)
+
 
 # Test the application
 test:
