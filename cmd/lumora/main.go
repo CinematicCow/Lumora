@@ -16,6 +16,7 @@ func main() {
 	if err != nil {
 		log.Panicf("something went wrong: %v", err)
 	}
+	defer db.Close()
 
 	data, err := database.ListLumora(db)
 

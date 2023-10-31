@@ -10,7 +10,6 @@ import (
 
 func ListLumora(file *os.File) ([]models.Lumora, error) {
 	db := file
-	defer db.Close()
 
 	var lumora []models.Lumora
 	decoder := gob.NewDecoder(db)
@@ -24,18 +23,14 @@ func ListLumora(file *os.File) ([]models.Lumora, error) {
 	return lumora, nil
 }
 
-func AddLumora(lumora models.Lumora) {
-	db, err := os.Open(models.LUMORA_PATH)
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
+func AddLumora(file *os.File, lumora models.Lumora) error {
+	db := file
 
 	encoder := gob.NewEncoder(db)
 
-	err = encoder.Encode(lumora)
-	if err != nil {
-		panic(err)
+	if err := encoder.Encode(lumora); err != nil {
+		return err
 	}
 
+	return nil
 }
