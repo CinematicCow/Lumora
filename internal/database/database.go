@@ -1,34 +1,60 @@
 package database
 
 import (
-	"encoding/gob"
 	"io"
 	"os"
 
 	"github.com/CinematicCow/Lumora/internal/models"
+	"github.com/CinematicCow/Lumora/internal/serde"
 )
 
-func GetAllFromDB(file *os.File) ([]models.Lumora, error) {
-	db := file
+// Retrieves all data from the given database file.
+//
+// It takes a pointer to an os.File as its parameter.
+// It returns a slice of values and an error.
+func GetAllFromDB(db *os.File) ([]models.DecodedData, error) {
 
-	var lumora []models.Lumora
-	decoder := gob.NewDecoder(db)
-	err := decoder.Decode(&lumora)
-	if err == io.EOF {
-		return nil, nil
-	} else if err != nil {
-		return nil, err
+	var result []models.DecodedData
+
+	buffer := make([]byte, 1024)
+
+	for {
+		n, err := db.Read(buffer)
+
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+
+		data := buffer[:n]
+
+		key, value, err := serde.Deserialize(data)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, models.DecodedData{
+			Key:   key,
+			Value: value,
+		})
 	}
 
-	return lumora, nil
+	return result, nil
 }
 
-func AddToDB(file *os.File, lumora models.Lumora) error {
-	db := file
+// Adds a key-value pair to the database.
+//
+// It takes a pointer to a file, key, and value as parameters.
+// It returns an error if there was a problem serializing the data or writing to the database.
+func AddToDB(db *os.File, key, value *[]byte) error {
+	data, err := serde.Serialize(key, value)
 
-	encoder := gob.NewEncoder(db)
+	if err != nil {
+		return err
+	}
 
-	if err := encoder.Encode(lumora); err != nil {
+	if _, err := db.Write(data); err != nil {
 		return err
 	}
 
