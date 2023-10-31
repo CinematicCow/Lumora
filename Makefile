@@ -28,7 +28,7 @@ run:
 
 
 # Test the application
-test:
+test:tmp
 ifeq ($(MODULE_NAME), all)
 	$(GOCLEAN) -cache
 	$(GOTEST) ./tests/...
@@ -56,5 +56,5 @@ init:
 clear:
 	./scripts/clear.sh -y
 
-temp:
+tmp:
 	rm -r ./tmp/*
