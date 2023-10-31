@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/CinematicCow/Lumora/internal/database"
+	"github.com/CinematicCow/Lumora/internal/models"
 )
 
 func setupTestFile(t *testing.T) *os.File {
 	// create a temp file to mock
-	tempFile, err := os.CreateTemp("", "test-lumora.gob")
+	tempFile, err := os.CreateTemp("../../../temp/", "test-lumora.gob")
 	if err != nil {
 		t.Fatalf("Failed to create temporary file: %v", err)
 	}
@@ -18,7 +19,6 @@ func setupTestFile(t *testing.T) *os.File {
 
 func openTestFile(t *testing.T) *os.File {
 	tempFile := setupTestFile(t)
-	defer tempFile.Close()
 
 	// open the mock file
 	db, err := os.Open(tempFile.Name())
@@ -28,12 +28,32 @@ func openTestFile(t *testing.T) *os.File {
 	return db
 }
 
-type ListLumoraCase struct {
+type TestCase struct {
 	name string
 	test func(t *testing.T)
 }
 
-var ListLumoraCases = []ListLumoraCase{
+var AddLumoraCases = []TestCase{
+	{
+		name: "AddLumora",
+		test: func(t *testing.T) {
+
+			db := setupTestFile(t)
+			defer db.Close()
+
+			data := models.Lumora{
+				Key:   "test",
+				Value: "test",
+			}
+			err := database.AddLumora(db, data)
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
+		},
+	},
+}
+
+var ListLumoraCases = []TestCase{
 	{
 		name: "ListLumora",
 		test: func(t *testing.T) {
@@ -63,6 +83,12 @@ var ListLumoraCases = []ListLumoraCase{
 			}
 		},
 	},
+}
+
+func TestAddLumoraCases(t *testing.T) {
+	for _, test := range AddLumoraCases {
+		t.Run(test.name, test.test)
+	}
 }
 
 func TestListLumoraCases(t *testing.T) {
