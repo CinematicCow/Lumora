@@ -8,7 +8,7 @@ import (
 	"github.com/CinematicCow/Lumora/internal/models"
 )
 
-func ListLumora(file *os.File) ([]models.Lumora, error) {
+func GetAllFromDB(file *os.File) ([]models.Lumora, error) {
 	db := file
 
 	var lumora []models.Lumora
@@ -23,7 +23,7 @@ func ListLumora(file *os.File) ([]models.Lumora, error) {
 	return lumora, nil
 }
 
-func AddLumora(file *os.File, lumora models.Lumora) error {
+func AddToDB(file *os.File, lumora models.Lumora) error {
 	db := file
 
 	encoder := gob.NewEncoder(db)

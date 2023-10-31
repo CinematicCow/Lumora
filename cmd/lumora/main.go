@@ -16,14 +16,21 @@ func main() {
 	if err != nil {
 		log.Panicf("something went wrong: %v", err)
 	}
-	defer db.Close()
 
-	data, err := database.ListLumora(db)
+	if err := database.AddToDB(db, models.Lumora{
+		Key:   "test",
+		Value: "test",
+	}); err != nil {
+		log.Panicf("something went wrong at add: %v", err)
+	}
+
+	data, err := database.GetAllFromDB(db)
 
 	if err != nil {
 		log.Panicf("something went wrong: %v", err)
 	}
 
 	fmt.Print(data)
+	defer db.Close()
 
 }

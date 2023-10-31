@@ -10,7 +10,7 @@ import (
 
 func setupTestFile(t *testing.T) *os.File {
 	// create a temp file to mock
-	tempFile, err := os.CreateTemp("../../../temp/", "test-lumora.gob")
+	tempFile, err := os.CreateTemp("../../../tmp/", "test-lumora.gob")
 	if err != nil {
 		t.Fatalf("Failed to create temporary file: %v", err)
 	}
@@ -33,9 +33,9 @@ type TestCase struct {
 	test func(t *testing.T)
 }
 
-var AddLumoraCases = []TestCase{
+var AddToDBCases = []TestCase{
 	{
-		name: "AddLumora",
+		name: "AddToDB",
 		test: func(t *testing.T) {
 
 			db := setupTestFile(t)
@@ -45,7 +45,7 @@ var AddLumoraCases = []TestCase{
 				Key:   "test",
 				Value: "test",
 			}
-			err := database.AddLumora(db, data)
+			err := database.AddToDB(db, data)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}
@@ -55,10 +55,10 @@ var AddLumoraCases = []TestCase{
 
 var ListLumoraCases = []TestCase{
 	{
-		name: "ListLumora",
+		name: "GetAllFromDB",
 		test: func(t *testing.T) {
 			db := openTestFile(t)
-			_, err := database.ListLumora(db)
+			_, err := database.GetAllFromDB(db)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
 			}
@@ -70,7 +70,7 @@ var ListLumoraCases = []TestCase{
 
 			db := openTestFile(t)
 			// call the ListLumora function
-			lumora, err := database.ListLumora(db)
+			lumora, err := database.GetAllFromDB(db)
 
 			// assert no error
 			if err != nil {
@@ -85,13 +85,13 @@ var ListLumoraCases = []TestCase{
 	},
 }
 
-func TestAddLumoraCases(t *testing.T) {
-	for _, test := range AddLumoraCases {
+func TestAddToDBCases(t *testing.T) {
+	for _, test := range AddToDBCases {
 		t.Run(test.name, test.test)
 	}
 }
 
-func TestListLumoraCases(t *testing.T) {
+func TestGetAllFromDBCases(t *testing.T) {
 	for _, test := range ListLumoraCases {
 		t.Run(test.name, test.test)
 	}
