@@ -1,62 +1,69 @@
 package database
 
 import (
+	"bufio"
 	"io"
+	"log"
 	"os"
 
 	"github.com/CinematicCow/Lumora/internal/models"
 	"github.com/CinematicCow/Lumora/internal/serde"
 )
 
-// Retrieves all data from the given database file.
-//
-// It takes a pointer to an os.File as its parameter.
-// It returns a slice of values and an error.
-func GetAllFromDB(db *os.File) ([]models.DecodedData, error) {
+func WriteToDB(db *os.File, data *models.Data) error {
 
-	var result []models.DecodedData
-
-	buffer := make([]byte, 1024)
-
-	for {
-		n, err := db.Read(buffer)
-
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return nil, err
-		}
-
-		data := buffer[:n]
-
-		key, value, err := serde.Deserialize(data)
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(result, models.DecodedData{
-			Key:   key,
-			Value: value,
-		})
-	}
-
-	return result, nil
-}
-
-// Adds a key-value pair to the database.
-//
-// It takes a pointer to a file, key, and value as parameters.
-// It returns an error if there was a problem serializing the data or writing to the database.
-func AddToDB(db *os.File, key, value *[]byte) error {
-	data, err := serde.Serialize(key, value)
+	sd, err := serde.Serialize(data)
 
 	if err != nil {
+		log.Fatal("Error while serializing", err)
 		return err
 	}
 
-	if _, err := db.Write(data); err != nil {
+	n, err := db.Write(append(sd, '\n'))
+
+	if err != nil {
+		log.Fatal("Error while writing to db", err)
+		return err
+	}
+
+	log.Default().Printf("data wrote: %d\ndata length: %d", n, len(sd))
+
+	if n-1 != len(sd) {
+		log.Fatal("Mismatch in number of bytes written", err)
 		return err
 	}
 
 	return nil
+
+}
+
+func ReadFromDB(db *os.File) ([]models.DecodedData, error) {
+
+	scanner := bufio.NewScanner(db)
+
+	var result []models.DecodedData
+
+	for scanner.Scan() {
+		line := scanner.Bytes()
+
+		d, err := serde.Deserialize(line)
+
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+
+		Key := string(d.Key)
+		Value := string(d.Value)
+		result = append(result, models.DecodedData{Key, Value})
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal("Error while reading from db", err)
+		return nil, err
+	}
+
+	return result, nil
 }

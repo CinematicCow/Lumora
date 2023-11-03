@@ -1,47 +1,29 @@
 package serde
 
 import (
-	"bytes"
-	"encoding/gob"
-
 	"github.com/CinematicCow/Lumora/internal/models"
+	"github.com/shamaton/msgpack/v2"
 )
 
-// Serialize the given key and value into a byte slice.
-//
-// It takes in two byte pointers, key and value, and returns a byte slice and an
-// error. The byte slice represents the serialized data, and the error indicates
-// any issues encountered during serialization.
-func Serialize(key, value *[]byte) ([]byte, error) {
-	var buf bytes.Buffer
-	encoder := gob.NewEncoder(&buf)
+func Serialize(data *models.Data) ([]byte, error) {
+	d, err := msgpack.Marshal(data)
 
-	data := models.Data{
-		Key:   *key,
-		Value: *value,
-	}
-
-	if err := encoder.Encode(data); err != nil {
+	if err != nil {
 		return nil, err
 	}
 
-	return buf.Bytes(), nil
+	return d, nil
 }
 
-// Deserialize the given byte slice into a key and value string.
-//
-// It takes a byte slice as a parameter and returns a key string, a value string, and an error.
-func Deserialize(data []byte) (key string, value string, err error) {
-	decoder := gob.NewDecoder(bytes.NewReader(data))
+func Deserialize(data []byte) (models.Data, error) {
 
-	var model models.Data
+	var result models.Data
+	err := msgpack.Unmarshal(data, &result)
 
-	if err = decoder.Decode(&model); err != nil {
-		return
+	if err != nil {
+		return result, err
 	}
 
-	key = string(model.Key)
-	value = string(model.Value)
+	return result, nil
 
-	return key, value, nil
 }

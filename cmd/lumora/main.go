@@ -21,7 +21,7 @@ func main() {
 
 	defer db.Close()
 
-	dbForWrite, err := os.Create(expandedPath)
+	dbForWrite, err := os.OpenFile(expandedPath, os.O_APPEND|os.O_WRONLY, 0600)
 
 	if err != nil {
 		log.Panicf("something went wrong at dbForWrite: %v", err)
@@ -29,17 +29,19 @@ func main() {
 
 	defer dbForWrite.Close()
 
-	Key := []byte("hello1")
-	Value := []byte("world2")
+	d := &models.Data{
+		Key:   []byte("cube"),
+		Value: []byte("solved"),
+	}
 
-	if err := database.AddToDB(dbForWrite, &Key, &Value); err != nil {
+	if err := database.WriteToDB(dbForWrite, d); err != nil {
 		log.Panicf("something went wrong at add: %v", err)
 	}
 
-	data, err := database.GetAllFromDB(db)
+	data, err := database.ReadFromDB(db)
 
 	if err != nil {
-		log.Panicf("something went wrong at main getAll: %v", err)
+		log.Panicf("something went wrong at main readDB: %v", err)
 	}
 
 	fmt.Print(data)
