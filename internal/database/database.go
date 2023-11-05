@@ -26,8 +26,6 @@ func WriteToDB(db *os.File, data *models.Data) error {
 		return err
 	}
 
-	log.Default().Printf("data wrote: %d\ndata length: %d", n, len(sd))
-
 	if n-1 != len(sd) {
 		log.Fatal("Mismatch in number of bytes written", err)
 		return err
@@ -37,11 +35,11 @@ func WriteToDB(db *os.File, data *models.Data) error {
 
 }
 
-func ReadFromDB(db *os.File) ([]models.DecodedData, error) {
+func ReadFromDB(db *os.File) ([]models.Data, error) {
 
 	scanner := bufio.NewScanner(db)
 
-	var result []models.DecodedData
+	var result []models.Data
 
 	for scanner.Scan() {
 		line := scanner.Bytes()
@@ -55,9 +53,7 @@ func ReadFromDB(db *os.File) ([]models.DecodedData, error) {
 			return nil, err
 		}
 
-		Key := string(d.Key)
-		Value := string(d.Value)
-		result = append(result, models.DecodedData{Key, Value})
+		result = append(result, d)
 	}
 
 	if err := scanner.Err(); err != nil {
