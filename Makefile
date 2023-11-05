@@ -28,12 +28,10 @@ run:
 
 
 # Test the application
-test:tmp
+test:
 ifeq ($(MODULE_NAME), all)
-	$(GOCLEAN) -cache
 	$(GOTEST) ./tests/...
 else
-	$(GOCLEAN) -cache
 	$(GOTEST) ./tests/...$(MODULE_NAME)
 endif
 
