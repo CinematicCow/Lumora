@@ -1,96 +1,131 @@
-package database
+package database__test
 
 import (
+	"log"
 	"os"
-	"sync"
+	"strconv"
 	"testing"
 
 	"github.com/CinematicCow/Lumora/internal/database"
 	"github.com/CinematicCow/Lumora/internal/models"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-var tempFilePool = sync.Pool{
-	New: func() interface{} {
-		tempFile, _ := os.CreateTemp("../../../tmp/", "test-lumora.gob")
-		return tempFile
-	},
+func createDBFile(t *testing.T) *os.File {
+	f, err := os.CreateTemp("../../../tmp/", "testdb")
+	if err != nil {
+		t.Fatal("Error while creating test db: ", err)
+	}
+	return f
 }
 
-var dataPool = sync.Pool{
-	New: func() interface{} {
-		return new(models.Data)
-	},
+func openDBFile(t *testing.T) *os.File {
+	f := createDBFile(t)
+
+	d, err := os.Open(f.Name())
+	if err != nil {
+		t.Fatal("Error while opening test db: ", err)
+	}
+	return d
+
 }
 
-func setupTestFile(t *testing.T) *os.File {
-	return tempFilePool.Get().(*os.File)
-}
-
-func openTestFile(t *testing.T) *os.File {
-	tempFile := setupTestFile(t)
-	db := new(os.File)
-	*db = *tempFile
-	return db
-}
-
-type TestCase struct {
-	name string
-	test func(*testing.T)
-}
-
-var AddToDBCases = []TestCase{
-	{
-		name: "AddToDB",
-		test: func(t *testing.T) {
-			db := openTestFile(t)
+func TestDBOperations(t *testing.T) {
+	Convey("Given a db file", t, func() {
+		Convey("when reading from an empty db", func() {
+			db := openDBFile(t)
 			defer db.Close()
 
-			data := dataPool.Get().(*models.Data)
-			data.Key = []byte("key")
-			data.Value = []byte("value")
-			err := database.AddToDB(db, &data.Key, &data.Value)
-			if err != nil {
-				t.Fatalf("Expected no error, got %v", err)
-			}
-			dataPool.Put(data)
-		},
-	},
-}
+			Convey("it should return an error and an empty slice", func() {
+				d, err := database.ReadFromDB(db)
+				log.Default().Println(err)
+				So(err, ShouldBeNil)
+				So(d, ShouldBeEmpty)
+			})
+		})
 
-var ListLumoraCases = []TestCase{
-	{
-		name: "GetAllFromDB",
-		test: func(t *testing.T) {
-			db := openTestFile(t)
-			_, err := database.GetAllFromDB(db)
-			if err != nil {
-				t.Fatalf("Expected no error, got %v", err)
-			}
-		},
-	},
-	{
-		name: "empty database",
-		test: func(t *testing.T) {
-			db := openTestFile(t)
-			lumora, err := database.GetAllFromDB(db)
-			if err != nil {
-				t.Fatalf("Expected no error, got %v", err)
-			}
-			if lumora != nil {
-				t.Fatalf("Expected nil, got %v", lumora)
-			}
-		},
-	},
-}
+		Convey("when writing to the db", func() {
+			db := createDBFile(t)
+			defer db.Close()
 
-func TestAddToDBCases(t *testing.T) {
-	for _, test := range AddToDBCases {
-		t.Run(test.name, test.test)
-	}
-}
+			Convey("it should write data without errors", func() {
+				md := &models.Data{
+					Key:   []byte("test-key"),
+					Value: []byte("test-value"),
+				}
 
-func TestGetAllFromDBCases(t *testing.T) {
-	for _, test := range ListLumoraCases {
-		t.Run(test.name, test.test)
-	}
+				err := database.WriteToDB(db, md)
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("when reading from the db", func() {
+			db := openDBFile(t)
+			defer db.Close()
+
+			Convey("it should return the data without errors", func() {
+				d, err := database.ReadFromDB(db)
+				So(err, ShouldBeNil)
+
+				Convey("each element should match the written data", func() {
+					for _, i := range d {
+						So(i, ShouldHaveSameTypeAs, models.Data{})
+					}
+
+				})
+			})
+		})
+
+		Convey("when comparing the written and read data", func() {
+			db := createDBFile(t)
+			defer db.Close()
+
+			Convey("it should match the written data", func() {
+				md := &models.Data{
+					Key:   []byte("Jon"),
+					Value: []byte("Doe"),
+				}
+
+				err := database.WriteToDB(db, md)
+				So(err, ShouldBeNil)
+
+				_, err = db.Seek(0, 0)
+				So(err, ShouldBeNil)
+
+				d, err := database.ReadFromDB(db)
+				So(err, ShouldBeNil)
+
+				So(len(d), ShouldEqual, 1)
+				So(d[0].Key, ShouldResemble, md.Key)
+				So(d[0].Value, ShouldResemble, md.Value)
+			})
+		})
+
+		Convey("when writing and reading multiple data to/from the db", func() {
+			db := createDBFile(t)
+			defer db.Close()
+
+			Convey("it should write and read multiple data without errors", func() {
+
+				s := 10
+
+				for i := 0; i < s; i++ {
+					md := &models.Data{
+						Key:   []byte("test-key" + strconv.Itoa(i)),
+						Value: []byte("test-value + " + strconv.Itoa(i)),
+					}
+					err := database.WriteToDB(db, md)
+					So(err, ShouldBeNil)
+				}
+
+				_, err := db.Seek(0, 0)
+				So(err, ShouldBeNil)
+
+				d, err := database.ReadFromDB(db)
+				So(err, ShouldBeNil)
+
+				So(len(d), ShouldEqual, s)
+			})
+		})
+	})
 }

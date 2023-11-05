@@ -2,7 +2,7 @@
 
 # Set the directory and file names.
 dir_name="$HOME/.lumora"
-file_name="lumora.gob"
+file_name="database"
 
 # Check if the directory or file already exists.
 if [[ -d "$dir_name" || -f "$dir_name/$file_name" ]]; then
