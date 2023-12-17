@@ -1,45 +1,46 @@
 package index__test
 
 import (
-	"testing"
-
+	"bytes"
 	"github.com/CinematicCow/Lumora/internal/index"
+	"log"
+	"testing"
 )
 
 func TestBTree(t *testing.T) {
-
-	// create a new btree
-	tree, err := index.NewBTree()
+	// Create a new BTree
+	b, err := index.NewBTree("./testdb")
 	if err != nil {
-		t.Error(err)
+		log.Fatal(err)
 	}
 
-	// insert some keys
-	keys := [][]byte{
-		[]byte("key1"),
-		[]byte("key2"),
-		[]byte("key3"),
-		[]byte("key4"),
-		[]byte("key5"),
+	// Add a key to the BTree
+	key := []byte("testKey")
+	err = index.AddKey(b, key)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	for _, key := range keys {
-		tree.Insert(key)
+	// Find the key in the BTree
+	value, err := index.FindKey(b, key)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	// check if the keys exist in the tree
-
-	for _, key := range keys {
-		if !tree.Has(key) {
-			t.Errorf("Key %s does not exist in the tree", key)
-		}
+	// Check if the value is correct
+	if !bytes.Equal(value, key) {
+		t.Errorf("Expected %v, got %v", key, value)
 	}
 
-	// remove a key
-	tree.Remove(keys[2])
+	// Remove the key from the BTree
+	err = index.RemoveKey(b, key)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// check if the key has been removed
-	if tree.Has(keys[2]) {
-		t.Errorf("Key %s has not been removed from the tree", keys[2])
+	// Try to find the key again
+	value, err = index.FindKey(b, key)
+	if err == nil {
+		t.Errorf("Expected an error, got nil")
 	}
 }
